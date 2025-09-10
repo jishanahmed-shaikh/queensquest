@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="src/client/public/MainLogo.png" alt="QueensQuest Logo" width="200" />
+<img src="src/client/public/MainLogo.svg" alt="QueensQuest Logo" width="200" />
 
 **A modern, interactive N-Queens puzzle game built for Reddit with React, TypeScript, and Devvit**
 

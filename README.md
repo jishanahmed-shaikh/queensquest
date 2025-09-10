@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![QueensQuest Logo](src/client/public/MainLogo.png)
+<img src="src/client/public/MainLogo.png" alt="QueensQuest Logo" width="200" />
 
 **A modern, interactive N-Queens puzzle game built for Reddit with React, TypeScript, and Devvit**
 
@@ -42,7 +42,7 @@ QueensQuest is an engaging N-Queens puzzle game designed specifically for Reddit
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/queensquest.git
+   git clone https://github.com/jishanahmed-shaikh/queensquest.git
    cd queensquest
    ```
 
@@ -270,8 +270,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/yourusername/queensquest/issues)
-- 💡 **Feature Requests**: [Start a discussion](https://github.com/yourusername/queensquest/discussions)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/jishanahmed-shaikh/queensquest/issues)
+- 💡 **Feature Requests**: [Start a discussion](https://github.com/jishanahmed-shaikh/queensquest/discussions)
 - 💬 **Community**: Join our [Discord server](https://discord.gg/your-invite)
 
 ---
@@ -280,6 +280,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for the Reddit community**
 
-[⭐ Star this repo](https://github.com/yourusername/queensquest) • [🐛 Report Bug](https://github.com/yourusername/queensquest/issues) • [💡 Request Feature](https://github.com/yourusername/queensquest/issues)
+[⭐ Star this repo](https://github.com/jishanahmed-shaikh/queensquest) • [🐛 Report Bug](https://github.com/jishanahmed-shaikh/queensquest/issues) • [💡 Request Feature](https://github.com/jishanahmed-shaikh/queensquest/issues)
 
 </div>

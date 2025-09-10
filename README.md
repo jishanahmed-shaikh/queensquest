@@ -1,4 +1,7 @@
-# 👑 QueensQuest
+<div align="center">
+
+# 👑 QueensQuest 👑
+</div>
 
 <div align="center">
 

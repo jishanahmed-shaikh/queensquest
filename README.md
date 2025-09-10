@@ -1,6 +1,6 @@
 <div align="center">
 
-# 👑 QueensQuest
+# 👑 QueensQuest 👑
 </div>
 
 <div align="center">

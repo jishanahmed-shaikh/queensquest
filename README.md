@@ -1,8 +1,11 @@
+<div align="center">
+
 # 👑 QueensQuest
+</div>
 
 <div align="center">
 
-![QueensQuest Logo](src/client/public/MainLogo.png)
+![QueensQuest Logo](src/client/public/MainLogo.svg)
 
 **A modern, interactive N-Queens puzzle game built for Reddit with React, TypeScript, and Devvit**
 

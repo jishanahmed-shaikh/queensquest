@@ -24,7 +24,7 @@ export const App = () => {
 	// Local view state: controls which screen to show: 'landing' | 'home' | 'game' | 'daily'
 	const [view, setView] = useState<'landing' | 'home' | 'game' | 'daily'>('landing');
 	const [showInfo, setShowInfo] = useState(false);
-	const [isMusicOn, setIsMusicOn] = useState(true);
+	const [isAudioOn, setIsAudioOn] = useState(true);
 	const [showLevelComplete, setShowLevelComplete] = useState(false);
 	const [completedBoardSize, setCompletedBoardSize] = useState<number | null>(null);
 	const [showDailyFailure, setShowDailyFailure] = useState(false);
@@ -101,10 +101,7 @@ export const App = () => {
 				// Time's up - show failure popup
 				setShowDailyFailure(true);
 				// Play lose sound
-				if (loseRef.current) {
-					loseRef.current.currentTime = 0;
-					void loseRef.current.play().catch(() => {});
-				}
+				playSound(loseRef);
 			}
 		}, 1000);
 		
@@ -116,10 +113,7 @@ export const App = () => {
 		if (view === 'daily' && isSolved) {
 			const todayIST = getISTDateString();
 			setDailyChallenge(prev => ({ ...prev, completed: true, lastChallengeDate: todayIST }));
-			if (completeRef.current) {
-				completeRef.current.currentTime = 0;
-				void completeRef.current.play().catch(() => {});
-			}
+			playSound(completeRef);
 			// Show completion popup instead of alert
 			setShowLevelComplete(true);
 		}
@@ -132,15 +126,16 @@ export const App = () => {
 	const loseRef = useRef<HTMLAudioElement | null>(null);
 	const hasTriedAutoplayRef = useRef(false);
 
-	// Restore persisted settings (level, music) and board size
+	// Restore persisted settings (level, audio) and board size
 	useEffect(() => {
 		try {
 			const savedBoardSize = Number(localStorage.getItem('qq.boardSize') ?? '6');
 			if (!Number.isNaN(savedBoardSize) && savedBoardSize >= 4 && savedBoardSize <= 12) {
 				void changeBoardSize(savedBoardSize);
 			}
-			// Start music ON by default per spec
-			setIsMusicOn(true);
+			// Restore audio setting or default to ON
+			const savedAudio = localStorage.getItem('qq.audioOn');
+			setIsAudioOn(savedAudio !== '0');
 		} catch {}
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
@@ -221,7 +216,7 @@ export const App = () => {
 		}
 
 		// Play/pause according to toggle (ensure only one is playing)
-		if (isMusicOn) {
+		if (isAudioOn) {
 			bgm.pause(); // ensure prior src stopped
 			void bgm.play().catch(() => {
 				hasTriedAutoplayRef.current = false;
@@ -229,12 +224,12 @@ export const App = () => {
 		} else {
 			bgm.pause();
 		}
-	}, [view, isMusicOn, homeBgmSrc, gameBgmSrc, dailyBgmSrc]);
+	}, [view, isAudioOn, homeBgmSrc, gameBgmSrc, dailyBgmSrc]);
 
 	// Start audio on first user interaction if autoplay was blocked
 	useEffect(() => {
 		const resume = () => {
-			if (isMusicOn && bgmRef.current && !hasTriedAutoplayRef.current) {
+			if (isAudioOn && bgmRef.current && !hasTriedAutoplayRef.current) {
 				hasTriedAutoplayRef.current = true;
 				void bgmRef.current.play().catch(() => {});
 			}
@@ -243,7 +238,7 @@ export const App = () => {
 		return () => {
 			window.removeEventListener('pointerdown', resume as any);
 		};
-	}, [isMusicOn]);
+	}, [isAudioOn]);
 
 	// Preload critical images so they're ready when shown
 	useEffect(() => {
@@ -263,9 +258,8 @@ export const App = () => {
 
 	// Play completion sound and update streak when solved in main game
 	useEffect(() => {
-		if (isSolved && completeRef.current && view === 'game') {
-			completeRef.current.currentTime = 0;
-			void completeRef.current.play().catch(() => {});
+		if (isSolved && view === 'game') {
+			playSound(completeRef);
 			setCompletedBoardSize(boardSize); // capture stable completed size
 			// Update max streak
 			setMaxStreakSize(prev => {
@@ -292,10 +286,7 @@ export const App = () => {
 
 	const handleSquareClick = (row: number, col: number) => {
 		// Play click SFX immediately for responsiveness
-		if (clickRef.current) {
-			clickRef.current.currentTime = 0;
-			void clickRef.current.play().catch(() => {});
-		}
+		playSound(clickRef);
 		// Immediate local update for snappy UI
 		void toggleQueenAt(row, col);
 	};
@@ -313,8 +304,16 @@ export const App = () => {
 		setCountdown(3);
 	};
 
+	// Helper function to play sound effects only if audio is enabled
+	const playSound = (audioRef: React.RefObject<HTMLAudioElement>) => {
+		if (isAudioOn && audioRef.current) {
+			audioRef.current.currentTime = 0;
+			void audioRef.current.play().catch(() => {});
+		}
+	};
+
 	const handleAudioToggle = () => {
-		setIsMusicOn(prev => {
+		setIsAudioOn(prev => {
 			const next = !prev;
 			const bgm = bgmRef.current;
 			if (bgm) {
@@ -324,7 +323,7 @@ export const App = () => {
 					bgm.pause();
 				}
 			}
-			try { localStorage.setItem('qq.musicOn', next ? '1' : '0'); } catch {}
+			try { localStorage.setItem('qq.audioOn', next ? '1' : '0'); } catch {}
 			return next;
 		});
 	};
@@ -398,10 +397,11 @@ export const App = () => {
 		try {
 			localStorage.removeItem('qq.maxStreakSize');
 			localStorage.removeItem('qq.boardSize');
-			localStorage.removeItem('qq.musicOn');
+			localStorage.removeItem('qq.audioOn');
 		} catch {}
 		setShowResetConfirm(false);
 		setMaxStreakSize(null);
+		setIsAudioOn(true); // Reset audio to ON
 		// Home rule: starting from 6x6 on new run no matter previous level
 		void changeBoardSize(6);
 		void resetGame();
@@ -608,16 +608,20 @@ export const App = () => {
 						{/* Floating particles - top layer */}
 						<div className="absolute inset-0 pointer-events-none z-50">
 							{[
-								{ e: '♕', top: '15%', left: '-10%', delay: '0s', duration: '8s' },
-								{ e: '👑', top: '25%', left: '-10%', delay: '2s', duration: '10s' },
-								{ e: '🏆', top: '70%', left: '-10%', delay: '4s', duration: '12s' },
-								{ e: '♕', top: '60%', left: '-10%', delay: '6s', duration: '9s' },
-								{ e: '👑', top: '40%', left: '-10%', delay: '1s', duration: '11s' },
-								{ e: '🏆', top: '80%', left: '-10%', delay: '3s', duration: '7s' },
+								{ e: '♕', animation: 'animate-float-ltr', top: '15%', left: '-10%', delay: '0s', duration: '8s' },
+								{ e: '👑', animation: 'animate-float-rtl', top: '25%', left: '110%', delay: '2s', duration: '10s' },
+								{ e: '🏆', animation: 'animate-float-ttb', top: '-10%', left: '70%', delay: '4s', duration: '12s' },
+								{ e: '♕', animation: 'animate-float-btt', top: '110%', left: '60%', delay: '6s', duration: '9s' },
+								{ e: '👑', animation: 'animate-float-diag-tl-br', top: '-10%', left: '-10%', delay: '1s', duration: '11s' },
+								{ e: '🏆', animation: 'animate-float-diag-tr-bl', top: '-10%', left: '110%', delay: '3s', duration: '7s' },
+								{ e: '♕', animation: 'animate-float-ltr', top: '45%', left: '-10%', delay: '5s', duration: '9s' },
+								{ e: '👑', animation: 'animate-float-rtl', top: '75%', left: '110%', delay: '7s', duration: '8s' },
+								{ e: '🏆', animation: 'animate-float-ttb', top: '-10%', left: '30%', delay: '1.5s', duration: '10s' },
+								{ e: '♕', animation: 'animate-float-btt', top: '110%', left: '85%', delay: '4.5s', duration: '11s' },
 							].map((p, i) => (
 								<div
 									key={i}
-									className="absolute text-2xl sm:text-3xl opacity-60 animate-float"
+									className={`absolute text-2xl sm:text-3xl opacity-60 ${p.animation}`}
 									style={{ 
 										top: p.top as string, 
 										left: p.left as string, 
@@ -652,7 +656,7 @@ export const App = () => {
 								<button
 									onClick={() => {
 										setView('home');
-										if (clickRef.current) { clickRef.current.currentTime = 0; void clickRef.current.play().catch(()=>{}); }
+										playSound(clickRef);
 									}}
 									className="font-gulfs px-6 py-3 bg-white border-2 border-orange-500 text-gray-900 rounded-2xl font-bold hover:bg-gray-100 transition-all shadow group-hover:shadow-xl group-hover:-translate-y-0.5"
 								>
@@ -711,7 +715,7 @@ export const App = () => {
 								<p className="font-gulfs text-base">{maxStreakSize ? `${maxStreakSize}×${maxStreakSize}` : 'NONE'}</p>
 							</div>
 							<div className="mt-3">
-								<ShareButtons completionTime={null} boardSize={maxStreakSize ?? 6} username={username} customText={maxStreakSize ? `My QueensQuest streak is ${maxStreakSize}×${maxStreakSize}! #QueensQuest` : 'Playing QueensQuest! #QueensQuest'} />
+								<ShareButtons completionTime={null} boardSize={maxStreakSize ?? 6} username={username} customText={maxStreakSize ? `I am playing QueensQuest! My max streak is ${maxStreakSize}×${maxStreakSize}! Can you beat it? 🏆 #QueensQuest` : 'I am playing QueensQuest! Join me in this amazing puzzle game! 🏆 #QueensQuest'} />
 							</div>
 						</div>
 

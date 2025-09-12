@@ -21,8 +21,8 @@ export const App = () => {
 
 	const { board, boardSize, queenCount, isSolved } = gameState;
 
-	// Local view state: controls which screen to show: 'home' | 'game' | 'daily'
-	const [view, setView] = useState<'home' | 'game' | 'daily'>('home');
+	// Local view state: controls which screen to show: 'landing' | 'home' | 'game' | 'daily'
+	const [view, setView] = useState<'landing' | 'home' | 'game' | 'daily'>('landing');
 	const [showInfo, setShowInfo] = useState(false);
 	const [isMusicOn, setIsMusicOn] = useState(true);
 	const [showLevelComplete, setShowLevelComplete] = useState(false);
@@ -203,7 +203,7 @@ export const App = () => {
 		const bgm = bgmRef.current;
 		if (!bgm) return;
 		// Set source by view
-		if (view === 'home') {
+		if (view === 'home' || view === 'landing') {
 			if (bgm.src !== window.location.origin + homeBgmSrc) {
 				bgm.src = homeBgmSrc;
 				bgm.load();
@@ -331,26 +331,34 @@ export const App = () => {
 
 	// (Removed level system and next level handler)
 
-	const handleDailyChallengeStart = () => {
+	const handleDailyChallengeStart = async () => {
 		const todayIST = getISTDateString();
 		if (dailyChallenge.lastChallengeDate === todayIST && dailyChallenge.completed) {
 			setShowDailyCompleted(true);
 			return;
 		}
-		
+
+		// Clear any overlays/state from main game to avoid visual carryover
+		setShowLevelComplete(false);
+		setShowDailyFailure(false);
+		setShowDailyCompleted(false);
+		setShowInfo(false);
+
+		// Ensure a clean unsolved board BEFORE entering daily view to avoid race with isSolved
+		setCompletedBoardSize(null);
+		if (boardSize !== 6) {
+			await changeBoardSize(6);
+		}
+		await resetGame();
+
+		// Arm the daily session after reset to avoid incorrectly marking as completed
 		setDailyChallenge(prev => ({
 			...prev,
 			startTime: Date.now(),
-			// Only mark completed upon success
 			completed: false,
 			lastChallengeDate: prev.lastChallengeDate === todayIST ? prev.lastChallengeDate : null,
 		}));
 		setView('daily');
-		// Start with 6x6 for daily challenge
-		if (boardSize !== 6) {
-			void changeBoardSize(6);
-		}
-		void resetGame();
 		setShowCheekyTip(true);
 		// Start countdown
 		setCountdown(3);
@@ -415,7 +423,7 @@ export const App = () => {
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
 					<div className="relative bg-white text-gray-900 rounded-3xl max-w-md w-full p-8 shadow-2xl text-center border-2 border-orange-500">
 						<div className="mb-6">
-							<h2 className="font-klemer text-3xl font-bold mb-2">🎉 Level Complete!</h2>
+							<h2 className="font-klemer text-3xl font-bold mb-2">{view === 'daily' ? '⚡ DAILY CHALLENGE COMPLETED' : '🎉 Level Complete!'}</h2>
 							<p className="font-gulfs text-lg">Congratulations! You solved the {completedBoardSize ?? boardSize}×{completedBoardSize ?? boardSize} puzzle!</p>
 							{completionTime !== null && (
 								<p className="font-gulfs text-sm mt-2 opacity-90">
@@ -585,6 +593,72 @@ export const App = () => {
 								Queens and boards may shuffle and trick you — a cheeky twist! Are you ready for the challenge?
 							</p>
 							<button onClick={() => setShowCheekyTip(false)} className="ml-auto text-xs px-2 py-1 bg-yellow-200 hover:bg-yellow-300 rounded">Dismiss</button>
+						</div>
+					</div>
+				)}
+				{view === 'landing' && (
+					<div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden">
+						{/* Full-bleed landing background only */}
+						<img
+							src="/Landing-BackgroundforApp.png"
+							alt="Background"
+							className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+						/>
+
+						{/* Floating particles - top layer */}
+						<div className="absolute inset-0 pointer-events-none z-50">
+							{[
+								{ e: '♕', top: '15%', left: '-10%', delay: '0s', duration: '8s' },
+								{ e: '👑', top: '25%', left: '-10%', delay: '2s', duration: '10s' },
+								{ e: '🏆', top: '70%', left: '-10%', delay: '4s', duration: '12s' },
+								{ e: '♕', top: '60%', left: '-10%', delay: '6s', duration: '9s' },
+								{ e: '👑', top: '40%', left: '-10%', delay: '1s', duration: '11s' },
+								{ e: '🏆', top: '80%', left: '-10%', delay: '3s', duration: '7s' },
+							].map((p, i) => (
+								<div
+									key={i}
+									className="absolute text-2xl sm:text-3xl opacity-60 animate-float"
+									style={{ 
+										top: p.top as string, 
+										left: p.left as string, 
+										animationDelay: p.delay as string,
+										animationDuration: p.duration as string
+									}}
+								>
+									{p.e}
+								</div>
+							))}
+						</div>
+
+						{/* Board frame with hover tilt (group) */}
+						<div className="group relative rounded-3xl p-3 bg-black/30 border border-white/30 shadow-2xl w-80 h-80 sm:w-96 sm:h-96 md:w-[28rem] md:h-[28rem] transform transition-transform duration-500 ease-out hover:-rotate-2">
+							{/* Board background */}
+							<div
+								className="absolute inset-0 grid gap-0 rounded-2xl overflow-hidden"
+								style={{ gridTemplateColumns: 'repeat(8, 1fr)', gridTemplateRows: 'repeat(8, 1fr)' }}
+							>
+								{Array.from({ length: 8 }).map((_, r) => (
+									Array.from({ length: 8 }).map((__, c) => {
+										const isLight = (r + c) % 2 === 0;
+										return (
+											<div key={`${r}-${c}`} className={`w-full h-full ${isLight ? 'chess-square-light' : 'chess-square-dark'}`}></div>
+										);
+									})
+								))}
+							</div>
+							{/* Centered content on the board */}
+							<div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-4 text-center">
+								<img src="/MainLogo.svg" onError={(e)=>{(e.currentTarget as HTMLImageElement).src='/MainLogo.png';}} alt="QueensQuest" className="w-48 sm:w-56 md:w-64 drop-shadow-[0_6px_20px_rgba(0,0,0,0.5)] transform transition-transform duration-500 ease-out group-hover:rotate-1 group-hover:scale-[1.03]" />
+								<button
+									onClick={() => {
+										setView('home');
+										if (clickRef.current) { clickRef.current.currentTime = 0; void clickRef.current.play().catch(()=>{}); }
+									}}
+									className="font-gulfs px-6 py-3 bg-white border-2 border-orange-500 text-gray-900 rounded-2xl font-bold hover:bg-gray-100 transition-all shadow group-hover:shadow-xl group-hover:-translate-y-0.5"
+								>
+									Enter the Quest
+								</button>
+							</div>
 						</div>
 					</div>
 				)}

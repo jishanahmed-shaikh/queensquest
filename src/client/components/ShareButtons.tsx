@@ -14,31 +14,18 @@ export const ShareButtons = ({ completionTime, boardSize, username: _username, c
   };
 
   const baseText = completionTime 
-    ? `I just completed the ${boardSize}x${boardSize} Queens Quest puzzle in ${formatTime(completionTime)}! Can you beat my time? 🏆 #QueensQuest #PuzzleChallenge`
-    : `I just completed the ${boardSize}x${boardSize} Queens Quest puzzle! in Can you beat me? 🏆 #QueensQuest #PuzzleChallenge`;
+    ? `I completed a ${boardSize}×${boardSize} on QueensQuest in ${formatTime(completionTime)}! Can you beat my time? 🏆 #QueensQuest`
+    : `I completed a ${boardSize}×${boardSize} on QueensQuest! Try to beat my board! 🏆 #QueensQuest`;
   const shareText = customText ?? baseText;
 
-  const redditUrl = `https://reddit.com/submit?url=${encodeURIComponent(window.location.href)}&title=${encodeURIComponent(shareText)}`;
-  const twitterUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(window.location.href)}`;
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://queensquest.game';
+  const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(shareText)}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`;
 
   return (
     <div className="flex gap-3 justify-center">
-      <a
-        href={twitterUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-4 py-2 bg-black hover:bg-gray-900 text-white rounded-lg font-bold transition-colors shadow-lg"
-      >
-        Share on X
-      </a>
-      <a
-        href={redditUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-colors shadow-lg"
-      >
-        Share on Reddit
-      </a>
+      <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-black hover:bg-gray-900 text-white rounded-lg font-bold transition-colors shadow-lg">Share on X</a>
+      <a href={redditUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-colors shadow-lg">Share on Reddit</a>
     </div>
   );
 };
